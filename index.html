@@ -1,0 +1,265 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>scroller</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    html, body {
+      margin: 20px;
+    }
+    .outer-container {
+      display: inline-block;
+      border: 2px solid #000;
+      padding: 1px;
+      background: #ccc;
+    }
+    .container {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      background: #fff;
+    }
+    .scroller {
+      width: 100%;
+      height: 100%;
+      overflow: scroll;
+      border: 2px solid #333;
+      padding: 10px;
+    }
+
+    /* disable scroll bars */
+    .scroller {
+      -ms-overflow-style: none;
+    }
+    .scroller::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .large-motherfucker {
+      display: inline-block;
+      background: url(colormap.png);
+      background-size: cover;
+      width: 750px;
+      height: 350px;
+      border: 2px solid #333;
+    }
+  </style>
+  <style>
+    .scroll-horizontal {
+      display: none;
+      position: absolute;
+      height: 20px;
+      left: -1px;
+      bottom: -1px;
+      right: 18px;
+      z-index: 3;
+      opacity: 0.5;
+    }
+    .scroll-vertical {
+      display: none;
+      position: absolute;
+      width: 20px;
+      top: -1px;
+      right: -1px;
+      bottom: 18px;
+      z-index: 1;
+      opacity: 0.5;
+    }
+    .scroll-corner {
+      display: none;
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      bottom: -1px;
+      right: -1px;
+      background: #A6A3A2;
+      border: 1px solid #fff;
+      z-index: 3;
+      opacity: 0.5;
+    }
+    
+    .horizontal .scroll-horizontal,
+    .vertical .scroll-vertical,
+    .horizontal .scroll-corner,
+    .vertical .scroll-corner {
+      display: block;
+    }
+    
+    
+    .scroll-button {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      width: 20px;
+      height: 20px;
+      background: #A6A3A2;
+      border: 1px solid #fff;
+      z-index: 2;
+      background-size: 20px 20px;
+      background-position: -1px -1px;
+      cursor: pointer;
+    }    
+    .scroll-left {
+      right: auto;
+      background-image: url(left.png);
+    }
+    .scroll-top {
+      bottom: auto;
+      background-image: url(up.png);
+    }
+    .scroll-right {
+      left: auto;
+      background-image: url(right.png);
+    }
+    .scroll-bottom {
+      top: auto;
+      background-image: url(down.png);
+    }
+    
+    .scroll-vertical .scroll-track {
+      position: absolute;
+      bottom: 19px;
+      top: 19px;
+      left: 0;
+      right: 0;
+      background: #A6A3A2;
+      border: 1px solid #fff;
+    }
+    .scroll-horizontal .scroll-track {
+      position: absolute;
+      left: 19px;
+      right: 19px;
+      top: 0;
+      bottom: 0;
+      background: #A6A3A2;
+      border: 1px solid #fff;
+    }
+    .scroll-vertical .scroll-thumb {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 0px;
+    }
+    .scroll-horizontal .scroll-thumb {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 0px;
+    }
+    .scroll-thumb-inner {
+      background: #F6F5F4;
+      margin: 3px;
+      border-radius: 3px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="outer-container">
+    <div class="container">
+      <div class="scroller">
+        <div class="large-motherfucker"></div>
+    
+        <div class="scroll-vertical">
+          <div class="scroll-button scroll-top"></div>
+          <div class="scroll-track"><div class="scroll-thumb"><div class="scroll-thumb-inner"></div></div></div>
+          <div class="scroll-button scroll-bottom"></div>
+        </div>
+        <div class="scroll-horizontal">
+          <div class="scroll-button scroll-left"></div>
+          <div class="scroll-track"><div class="scroll-thumb"><div class="scroll-thumb-inner"></div></div></div>
+          <div class="scroll-button scroll-right"></div>
+        </div>
+        <div class="scroll-corner"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="outer-container">
+    <div class="container">
+      <div class="scroller">
+        <div class="large-motherfucker"></div>
+    
+        <div class="scroll-vertical">
+          <div class="scroll-button scroll-top"></div>
+          <div class="scroll-track"><div class="scroll-thumb"><div class="scroll-thumb-inner"></div></div></div>
+          <div class="scroll-button scroll-bottom"></div>
+        </div>
+        <div class="scroll-horizontal">
+          <div class="scroll-button scroll-left"></div>
+          <div class="scroll-track"><div class="scroll-thumb"><div class="scroll-thumb-inner"></div></div></div>
+          <div class="scroll-button scroll-right"></div>
+        </div>
+        <div class="scroll-corner"></div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const scroller = document.querySelector('.scroller');
+    const scrollHorizontal = scroller.querySelector('.scroll-horizontal');
+    const scrollVertical = scroller.querySelector('.scroll-vertical');
+        
+    function scrollInit() {
+      var visible = {
+        horizontal: scroller.scrollWidth > scroller.offsetWidth,
+        vertical: scroller.scrollHeight > scroller.offsetHeight
+      }
+      
+      if (scroller.classList.contains('horizontal') != visible.horizontal) {
+        scroller.classList.toggle('horizontal');
+      }
+      
+      if (scroller.classList.contains('vertical') != visible.vertical) {
+        scroller.classList.toggle('vertical');
+      }
+    }
+    
+    function scrollHandler(e) {
+      scrollInit();
+      
+      console.log(scroller.scrollTop, scroller.scrollLeft);
+      console.log(
+        'scrollHeight: ' + scroller.scrollHeight, 
+        'scrollWidth: ' + scroller.scrollWidth, 
+        'height: ' + scroller.offsetHeight, 
+        'width: ' + scroller.offsetWidth
+      );
+      
+      // horizontal
+      const scrollHorizontalTrack = scrollHorizontal.querySelector('.scroll-track');
+      const scrollHorizontalThumb = scrollHorizontal.querySelector('.scroll-thumb');
+      const width = (scroller.offsetWidth / scroller.scrollWidth) * scrollHorizontalTrack.offsetWidth;
+      const left = (scrollHorizontalTrack.offsetWidth - width - 3) * scroller.scrollLeft / (scroller.scrollWidth - scroller.offsetWidth);
+      scrollHorizontalThumb.style.width = width + 'px';
+      scrollHorizontalThumb.style.left = left + 'px';
+
+      // vertical
+      const scrollVerticalTrack = scrollVertical.querySelector('.scroll-track');
+      const scrollVerticalThumb = scrollVertical.querySelector('.scroll-thumb');
+      const height = (scroller.offsetHeight / scroller.scrollHeight) * scrollVerticalTrack.offsetHeight;
+      const top = (scrollVerticalTrack.offsetHeight - height - 3) * scroller.scrollTop / (scroller.scrollHeight - scroller.offsetHeight);
+      scrollVerticalThumb.style.height = height + 'px';
+      scrollVerticalThumb.style.top = top + 'px';
+      
+      
+    }
+    
+    scroller.addEventListener('scroll', scrollHandler);
+    scrollInit();
+    
+  </script>
+</body>
+</html>
+  
