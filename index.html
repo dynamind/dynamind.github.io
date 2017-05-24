@@ -61,6 +61,7 @@
       height: 100%;
       overflow: scroll;
       -webkit-overflow-scrolling: touch;
+      -ms-touch-action: pan-x;
     }
     .scroller-wrapper-inner {
       display: inline-block;
@@ -213,6 +214,8 @@
     function scrollify(scrollable) {
       'use strict';
       
+      var SCROLL_SPEED = 20;
+      
       function debounce(func, wait, immediate) {
       	var timeout;
       	return function() {
@@ -247,14 +250,19 @@
           track.appendChild(thumb);
           
           var scroller = create(className);
-          scroller.appendChild(create('scroll-button scroll-start'));
+          var start = create('scroll-button scroll-start');
+          var end = create('scroll-button scroll-end');
+          
+          scroller.appendChild(start);
           scroller.appendChild(track);
-          scroller.appendChild(create('scroll-button scroll-end'));
+          scroller.appendChild(end);
           
           return {
             scroller: scroller,
             track: track,
-            thumb: thumb
+            thumb: thumb,
+            start: start,
+            end: end
           };
         }
         
@@ -320,7 +328,7 @@
           updateScrollThumbs();
         });
       }
-
+      
       self.state = init();
       toggleScrollBarVisibility();
       var lazyToggleScrollBarVisibility = debounce(toggleScrollBarVisibility, 50);
@@ -330,16 +338,168 @@
 
       var topContent = document.querySelector('.top-content');
       var leftContent = document.querySelector('.left-content');
+      
       self.state.scroller.addEventListener('scroll', function(){
+        console.log('scroll');
         topContent.style.transform = 'translate3d(' + (-self.state.scroller.scrollLeft) + 'px, 0, 0)';
         leftContent.style.transform = 'translate3d(0, ' + (-self.state.scroller.scrollTop) + 'px, 0)';
       });
       
+      function getCoords(e) {
+        if (e.type.indexOf('touch') === 0) {
+          return {
+            x: e.changedTouches[0].clientX,
+            y: e.changedTouches[0].clientY
+          };
+        } else {
+          return {
+            x: e.clientX,
+            y: e.clientY
+          };
+        }
+      }
+
+      function scrollLeftHandler(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        self.state.scrolling = setInterval(function(){
+          console.log('scrollLeft');
+          self.state.scroller.scrollLeft -= SCROLL_SPEED;
+        }, 1000 / 60)
+      }
+
+      self.state.horizontal.start.addEventListener('mousedown', scrollLeftHandler);
+      self.state.horizontal.start.addEventListener('touchstart', scrollLeftHandler);
+
+      function scrollRightHandler(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        self.state.scrolling = setInterval(function(){
+          console.log('scrollRight');
+          self.state.scroller.scrollLeft += SCROLL_SPEED;
+        }, 1000 / 60)
+      }
+
+      self.state.horizontal.end.addEventListener('mousedown', scrollRightHandler);
+      self.state.horizontal.end.addEventListener('touchstart', scrollRightHandler);
+
+      function scrollTopHandler(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        self.state.scrolling = setInterval(function(){
+          console.log('scrollTop');
+          self.state.scroller.scrollTop -= SCROLL_SPEED;
+        }, 1000 / 60)
+      }
+
+      self.state.vertical.start.addEventListener('mousedown', scrollTopHandler);
+      self.state.vertical.start.addEventListener('touchstart', scrollTopHandler);
+
+      function scrollBottomHandler(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        self.state.scrolling = setInterval(function(){
+          console.log('scrollBottom');
+          self.state.scroller.scrollTop += SCROLL_SPEED;
+        }, 1000 / 60)
+      }
+
+      self.state.vertical.end.addEventListener('mousedown', scrollBottomHandler);
+      self.state.vertical.end.addEventListener('touchstart', scrollBottomHandler);
+      
+      function horizontalTrackClickHandler(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var rect = self.state.horizontal.thumb.getBoundingClientRect();
+        var coords = getCoords(e);
+        if (coords.x > rect.right) {
+          self.state.scroller.scrollLeft += self.state.scroller.offsetWidth/2;
+        } else if (coords.x < rect.left) {
+          self.state.scroller.scrollLeft -= self.state.scroller.offsetWidth/2;
+        }
+      }
+
+      self.state.horizontal.track.addEventListener('mousedown', horizontalTrackClickHandler);
+      self.state.horizontal.track.addEventListener('touchstart', horizontalTrackClickHandler);
+
+      function verticalTrackClickHandler(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var rect = self.state.vertical.thumb.getBoundingClientRect();
+        var coords = getCoords(e);
+        if (coords.y > rect.bottom) {
+          self.state.scroller.scrollTop += self.state.scroller.offsetHeight/2;
+        } else if (coords.y < rect.top) {
+          self.state.scroller.scrollTop -= self.state.scroller.offsetHeight/2;
+        }
+      }
+
+      self.state.vertical.track.addEventListener('mousedown', verticalTrackClickHandler);
+      self.state.vertical.track.addEventListener('touchstart', verticalTrackClickHandler);
+      
+      function verticalDragStartHandler(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        self.state.dragging = {
+          direction: 'vertical',
+          y: getCoords(e).y,
+          o: self.state.scroller.scrollTop
+        };
+      }
+      
+      self.state.vertical.thumb.addEventListener('mousedown', verticalDragStartHandler);
+      self.state.vertical.thumb.addEventListener('touchstart', verticalDragStartHandler);
+
+      function horizontalDragStartHandler(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        self.state.dragging = {
+          direction: 'horizontal',
+          x: getCoords(e).x,
+          o: self.state.scroller.scrollLeft
+        };
+      }
+
+      self.state.horizontal.thumb.addEventListener('mousedown', horizontalDragStartHandler);
+      self.state.horizontal.thumb.addEventListener('touchstart', horizontalDragStartHandler);
+      
+      function moveHandler(e) {
+        var dragging = self.state.dragging;
+        if (!dragging) return;
+        
+        var coords = getCoords(e);
+        if (dragging.direction == 'horizontal') {
+          var d = (dragging.x - coords.x) * (self.state.scroller.scrollWidth / self.state.horizontal.track.offsetWidth);
+          self.state.scroller.scrollLeft = dragging.o - d;
+          
+        } else if (self.state.dragging.direction == 'vertical') {
+          var d = (dragging.y - coords.y) * (self.state.scroller.scrollHeight / self.state.vertical.track.offsetHeight);
+          self.state.scroller.scrollTop = dragging.o - d;
+        }
+      }
+      
+      document.addEventListener('mousemove', moveHandler);
+      document.addEventListener('touchmove', moveHandler);
+
+      function releaseHandler(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        clearInterval(self.state.scrolling);
+        self.state.dragging = null;
+      }
+
+      document.addEventListener('mouseup', releaseHandler);
+      document.addEventListener('touchend', releaseHandler);
+      
     }
     
-    for (let el of document.querySelectorAll('.large-motherfucker')) {
-      scrollify(el);
+    var els = document.querySelectorAll('.large-motherfucker');
+    for (var i = 0; i < els.length; i++) {
+      scrollify(els[i]);
     }
+    // for (let el of document.querySelectorAll('.large-motherfucker')) {
+    //   scrollify(el);
+    // }
 
   </script>
 </body>
